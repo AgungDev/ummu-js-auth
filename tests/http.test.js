@@ -28,6 +28,35 @@ test('adds bearer token to protected API requests', async () => {
   assert.equal(response.status, 200)
 })
 
+test('does not send tokens or refresh requests to another origin', async () => {
+  const tokens = new TokenManager()
+  tokens.setSession({
+    accessToken: 'access-token',
+    refreshToken: 'refresh-token',
+    tokenType: 'Bearer',
+    expiresAt: Date.now() + 60_000,
+  })
+  const requests = []
+  const fetchImpl = async (request) => {
+    requests.push(request)
+    assert.equal(request.url, 'https://other.example.test/private')
+    assert.equal(request.headers.get('Authorization'), null)
+    return new Response(null, { status: 401 })
+  }
+  const client = new AuthenticatedHttpClient(
+    'https://api.example.test',
+    'https://auth.example.test',
+    tokens,
+    fetchImpl,
+  )
+
+  const response = await client.fetch('https://other.example.test/private')
+
+  assert.equal(response.status, 401)
+  assert.equal(requests.length, 1)
+  assert.equal(tokens.getSession()?.refreshToken, 'refresh-token')
+})
+
 test('refreshes after 401 and retries once using the rotated access token', async () => {
   const tokens = new TokenManager()
   tokens.setSession({

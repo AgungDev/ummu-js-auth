@@ -44,16 +44,23 @@ function readTokenResponse(value: unknown): TokenResponse {
 
 export class AuthenticatedHttpClient {
   private refreshInFlight: Promise<AuthSession | null> | null = null
+  private readonly apiOrigin: string
 
   constructor(
     private readonly apiBaseUrl: string,
     private readonly authServiceUrl: string,
     private readonly tokens: TokenManager,
     private readonly fetchImpl: typeof globalThis.fetch,
-  ) {}
+  ) {
+    this.apiOrigin = new URL(apiBaseUrl).origin
+  }
 
   async fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     const request = new Request(this.resolveUrl(input), init)
+    if (new URL(request.url).origin !== this.apiOrigin) {
+      return this.fetchImpl(request)
+    }
+
     const accessToken = this.tokens.getAccessToken()
     if (accessToken) request.headers.set('Authorization', `Bearer ${accessToken}`)
 

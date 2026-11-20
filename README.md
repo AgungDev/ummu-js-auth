@@ -1,6 +1,9 @@
 # @ganz404/js-auth
 
-Browser SDK for the existing UMMU Auth Service. Current version: **0.1.0**.
+Browser SDK for the existing UMMU Auth Service. Current version: **0.1.1**.
+
+See [`docs/v0.1.1.md`](./docs/v0.1.1.md) for the release notes and the
+Auth Service compatibility audit.
 
 ## Important protocol limitation
 
@@ -79,6 +82,10 @@ it exchanges the stored refresh token at the service's `/api/v1/auth/refresh`
 endpoint, stores the rotated token pair, and retries the request once. Logout
 clears local tokens and calls the protected service logout endpoint; a network
 or server failure is reported to the caller.
+
+Automatic bearer-token attachment and refresh are restricted to the configured
+`apiBaseUrl` origin. Requests to other origins are sent without the SDK's
+tokens and are not automatically retried after HTTP 401.
 
 Tokens are kept in memory by default. `tokenStorage: 'session'` opts into
 `sessionStorage`; browser storage is accessible to same-origin JavaScript and
